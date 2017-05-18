@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<head>
+<style>
+   .btn {
+    border: none;
+    color: white;
+    padding: 10px 27px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 12px;
+    width: 200px;
+} 
+::-webkit-input-placeholder {
+   font-size:22px;
+   color:black;
+   text-align: center;
+   padding-top: 25px;
+}
+
+</style>
+</head>
+<body>
+<div>
+<div id="cloud" style="margin-left:100px;float:left;width:550px;height:500px;border:1px solid"></div>
+<div id="tree"  style="float:left;width:450px;height:500px;border:1px solid"></div>
+</div>
+<textarea id="txta" type="text" name="words" placeholder="Enter Text" style="background-color:#B6E0FF;width:1000px;height:80px;margin-left:100px">
+Apply Rx Levo Throxiane everyday. Take Threonine on empty stomach everyday.
+Apply Rx Nystatin Cream to lesions every 4 to 6 hours. keep from scratching or other irritations. Also, keep areas well learned to prevent from spreading. Will Samuel for follow-up appointment in one week. If any questions or conditions worsen contact doctor immediately
+I Rama Murthy, MD diagnosed Devi with borderline Myotonic MUSCULAR dystrophy (MMD). MMD is where muscles have difficulty relaxing and mild heart problems.
+55 year old male Caucasian with a history of diabetes mel­ litus and chronic renal insufficiency now with atrial fibrillation, rapid ventricular rate, congestive heart failure exacerbation and right leg cellulitis going to 10W telemetry unit. 
+</textarea>
+<br><br>
+<input class="btn" style="background-color: #4CAF50;margin-left:350px" type="button" name="gen" value="Generate Word Cloud & Tree" onclick="showNewWords(myWordCloud)"/>
+<input class="btn" style="background-color: #f44336;margin-left:50px" type="button" name="can" value="Cancel"/>
+
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="https://rawgit.com/jasondavies/d3-cloud/master/build/d3.layout.cloud.js"></script>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script>
+var fetch=0;
+
+// Encapsulate the word cloud functionality
+function wordCloud(selector) {
+
+    var fill = d3.scale.category20();
+
+    //Constructing the word cloud's SVG element
+    var svg = d3.select(selector).append("svg")
+        .attr("width", 500)
+        .attr("height", 500)
+        .append("g")
+        .attr("transform", "translate(250,250)");
+
+
+    //Drawing the word cloud
+    function draw(words) {
+        var cloud = svg.selectAll("g text")
+                        .data(words, function(d) { return d.text; })
+
+        //Entering words
+        cloud.enter()
+            .append("text")
+            .style("font-family", "Impact")
+            .style("fill", function(d, i) { return fill(i); })
+            .attr("text-anchor", "middle")
+            .attr('font-size', 1)
+            .text(function(d) { return d.text; });
+
+        //Entering and existing words
+        cloud
+            .transition()
+                .duration(600)
+                .style("font-size", function(d) { return d.size + "px"; })
+                .attr("transform", function(d) {
+                    return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+                })
+                .style("fill-opacity", 1);
+
+        //Exiting words
+        cloud.exit()
+            .transition()
+                .duration(200)
+                .style('fill-opacity', 1e-6)
+                .attr('font-size', 1)
+                .remove();
+    }
+
+
+    return {
+          //function to be called when new words are entered , and Generate button is clicked.
+        update: function(words) {
+            d3.layout.cloud().size([500, 500])
+                .words(words)
+                .padding(5)
+                .rotate(function() { return ~~(Math.random() * 2) * 90; })
+                .font("Impact")
+                .fontSize(function(d) { return d.size; })
+                .on("end", draw)
+                .start();
+        }
+    }
+
+}
+
+
+var words = [];
+
+//Preparing sentences by removing punctuation and setting size based on frequency
+function getWords(i) {
+    return words[i]
+            .replace(/[()!\.,:;\?]/g, '')
+            .replace(/\n/g,' ')
+            .split(' ')
+            .map(function(d) {
+                if(getOccurence(d,words[i]) == 1 || d == 'and' || d == 'with' || d == 'to' || d == 'or' )
+                  return {text: d, size: 12 }; 
+                else
+                  return {text: d, size: 10 + getOccurence(d,words[i]) * 30 };
+            })
+}
+
+//Method redraws the cloud with a new set of words.
+function showNewWords(select) {
+    var newText = document.getElementById('txta');
+    
+        words[0] = newText.value;
+ 
+
+    var wordsplit= getWords(0);
+    for(var i=0;i< wordsplit.length;i++){
+        console.log("word: "+wordsplit[i].text+wordsplit[i].size);
+    }
+    select.update(wordsplit);
+    if(fetch == 1){
+       drawChart();
+     }
+    fetch = 1;
+
+}
+
+//Create a new instance of the word cloud visualisation.
+var myWordCloud = wordCloud("#cloud");
+
+
+showNewWords(myWordCloud);
+
+//Get Occurencr for word in the input String
+function getOccurence(word,wordarray){
+     
+     var count = 0;
+      wordarray = wordarray.replace(/[()!\.,:;\?]/g, '');
+      wordarray = wordarray.replace(/\n/g,' ')
+      wordList = wordarray.split(' ');
+      for(var i=0;i<wordList.length;i++){
+        if(wordList[i].toLowerCase() == word.toLowerCase()){
+            count++;
+        }
+      }
+        console.log("word & count:"+word+","+count);   
+      return count;
+}
+
+//Intializing google charts with word tree packages
+
+ google.charts.load('current', {packages:['wordtree']});
+     google.charts.setOnLoadCallback(drawChart);
+
+      // function draws the word tree
+      function drawChart() {
+        var text = document.getElementById('txta').value;
+
+        var data = google.visualization.arrayToDataTable(
+          [ ['Phrases'],
+            [text],
+          ]
+        );
+
+        var options = {
+          wordtree: {
+            format: 'implicit'
+          }
+        };
+
+        var chart = new google.visualization.WordTree(document.getElementById('tree'));
+        chart.draw(data, options);
+      }
+
+</script>
+
+</body>
+</html>
